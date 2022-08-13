@@ -125,10 +125,10 @@ class UnetBlock(BlockInterface):
         i = 0
         for layer in self.layers:
             last_output = mid_output[len(mid_output) - 1]  # 上一层输出
-            if i <= self.single_layers - 1:
+            if i < self.single_layers:
                 mid_output.append(layer(last_output))
             else:
-                equal_output = mid_output[self.single_layers * 2 + 1 - i]  # 上采样层的等效层的输出
+                equal_output = mid_output[self.single_layers * 2 - i - 1]  # 上采样层的等效层的输出
                 mid_output.append(layer(last_output, equal_output))
             i += 1
         fin_output = mid_output[len(mid_output) - 1]
@@ -170,12 +170,12 @@ class UpSampleBlock(nn.Module):
 
     def forward(self, x1, x2):
         x1 = self.up(x1)
-        # input is CHW
-        diffY = x2.size()[2] - x1.size()[2]
-        diffX = x2.size()[3] - x1.size()[3]
-
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2])
+        # # input is CHW
+        # diffY = x2.size()[2] - x1.size()[2]
+        # diffX = x2.size()[3] - x1.size()[3]
+        #
+        # x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+        #                 diffY // 2, diffY - diffY // 2])
         # if you have padding issues, see
         # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
         # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd

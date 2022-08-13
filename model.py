@@ -307,7 +307,7 @@ class Unet(nn.Module):
         super(Unet, self).__init__()  # Net -> CNN
         self.intput_conv = module.BottleneckBlock(1, 64)
         self.unet_block = module.UnetBlock(64, 64, 2, 2, 4)
-        self.output_conv = module.BottleneckBlock(64, 1)
+        self.output_conv = module.ResidualBlock(64, 1)
 
     def forward(self, x):
         x = self.intput_conv(x)
