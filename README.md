@@ -38,7 +38,8 @@ CUDA11.6/11.7
       def forward(self, x):
           y = F.relu(self.conv1(x))
           y = self.conv2(y)
-          x = self.conv_side(x)
+        if self.input_channels != self.output_channels:
+            x = self.conv_side(x)
           return F.relu(x + y)
   ```
 
@@ -64,7 +65,8 @@ CUDA11.6/11.7
           y = F.relu(self.conv1(x))
           y = F.relu(self.conv2(y))
           y = self.conv3(y)
-          x = self.conv_side(x)
+        if self.input_channels != self.output_channels:
+            x = self.conv_side(x)
           return F.relu(x + y)
   ```
 

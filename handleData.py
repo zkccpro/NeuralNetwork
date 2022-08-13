@@ -99,7 +99,6 @@ class DataReaderDouble(DataReaderInterface):
             if min_stat != 0 and i % stat_every == 1:  # 显示进度
                 stat = int((i / total_num) * 100)
                 print('loading data completed:', stat, '%')
-            print(pic)
             img = Image.open(os.path.join(self.path, pic)).convert('L')
             img_2 = Image.open(os.path.join(self.path_2, pic)).convert('L')
             tag = float(pic[len(pic) - 8: len(pic) - 4])
@@ -147,14 +146,15 @@ class CustomedDataSet(Dataset):
         # 图像数据类型转换（数据和标签都转成np）
         if self.data_type == 'img':
             if self.train:
-                # print(len(train_x))
                 for channel in train_x:
                     for i in range(len(channel)):
                         channel[i] = np.asarray(channel[i])
                         # 归一化
-                        channel[i] = (channel[i] - np.min(channel[i])) / (np.max(channel[i]) - np.min(channel[i]))
+                        section = np.max(channel[i]) - np.min(channel[i])
+                        if section != 0:
+                            channel[i] = (channel[i] - np.min(channel[i])) / section
                 train_x = np.array(train_x)
-                # print(train_x)
+                # print(train_x.shape)
                 for i in range(len(train_y)):
                     train_y[i] = [train_y[i]]
                 train_y = np.array(train_y)
@@ -163,11 +163,14 @@ class CustomedDataSet(Dataset):
                     for i in range(len(channel)):
                         channel[i] = np.asarray(channel[i])
                         # 归一化
-                        channel[i] = (channel[i] - np.min(channel[i])) / (np.max(channel[i]) - np.min(channel[i]))
+                        section = np.max(channel[i]) - np.min(channel[i])
+                        if section != 0:
+                            channel[i] = (channel[i] - np.min(channel[i])) / section
                 test_x = np.array(test_x)
                 for i in range(len(test_y)):
                     test_y[i] = [test_y[i]]
                 test_y = np.array(test_y)
+
         # 赋给成员变量，如果数据类型不是tensor，就转成tensor再赋值；是tensor就直接扔进去
         if self.data_type != 'tensor':
             if self.train:
@@ -177,6 +180,7 @@ class CustomedDataSet(Dataset):
             else:
                 self.dataset = torch.from_numpy(test_x).float()
                 self.labels = torch.from_numpy(test_y).float()  # for mse loss: float, nll loss: long
+                # print(self.labels)
         else:
             if self.train:
                 self.dataset = train_x.float()

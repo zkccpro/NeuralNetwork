@@ -1,27 +1,14 @@
-import os
-from PIL import Image
 from torch.utils.data import DataLoader
 import handleData
 import globalParam
 import action
 import model
-import torch
 
 
-# 数据集采用TinyData，1w张图片，每21张图片为一个batch，基于同一个图片调整的曝光值
+# 数据集采用TinyData+DifPic，1w+1w张图片，每21张图片为一个batch，基于同一个图片调整的曝光值
 def ut_TinyData_cnn_doubleinput():
-    # x = torch.randn(5, 2, 3, 4)
-    # print(x)
-    # x1, x2 = x.split(1, 1)
-    # print(x1.shape, x2.shape)  # x1,x2:[5, 1, 3, 4]
-    # print(x1, x2)
-    #
-    # xn = torch.cat([x1, x2], dim=1)  # 在1维度（从左往右数），合并x1、x2
-    # print(xn.shape)  # xn:[5, 2, 3, 4]
-    # print(xn)
-
     # 1. load data and label
-    # 读入数据
+    # 2w张图片，训练时稳定占用25G内存
     pic_list, test_list, label, test_label = handleData.DataReaderDouble(r"data/TinyData/", r"data/DiffPic/").read(default=True)
 
     # 2. prepare train data
@@ -39,27 +26,27 @@ def ut_TinyData_cnn_doubleinput():
                worker_init_fn=None)
 
     # prepare model
-    cnn = globalParam.bottleneckcnn_doubleinput_network
+    cnn = globalParam.secnn_doubleinput_network
 
     # train
     print('--------------------------------------------')
     print('start training!')
-    action.train(cnn, dataloader, testloader, globalParam.bottleneckcnn_doubleinput_optimizer, epoch=21)
+    action.train(cnn, dataloader, testloader, globalParam.secnn_doubleinput_optimizer, epoch=100)
 
     # test
     print('--------------------------------------------')
     print('start testing!')
     action.test_regression(cnn, testloader, draw_or_not=True)
 
-    # # save，不要轻易save，容易冲掉以前的模型！
-    # print('--------------------------------------------')
-    # print('saving model!')
-    # action.save_model(cnn, 'model/ResidualCNN/neck_batch=21_epoch=100_lr=0.00002_momentum=0.9_weight_decay=1e-2')
-    #
-    # # playback
-    # print('--------------------------------------------')
-    # print('playback model!')
-    # playback_cnn = model.BottleneckCNN()  # 这里记得改！
-    # action.model_playback(playback_cnn, 'model/ResidualCNN/neck_batch=21_epoch=100_lr=0.00002_momentum=0.9_weight_decay=1e-2')
-    # action.test_regression(playback_cnn, testloader, draw_or_not=True)
+    # save，不要轻易save，容易冲掉以前的模型！
+    print('--------------------------------------------')
+    print('saving model!')
+    action.save_model(cnn, 'model/ResidualCNN/doubleinput_se_batch=21_epoch=100_lr=0.00005_momentum=0.9_weight_decay=1e-2')
+
+    # playback
+    print('--------------------------------------------')
+    print('playback model!')
+    playback_cnn = model.SECNNDoubleInput()  # 这里记得改！
+    action.model_playback(playback_cnn, 'model/ResidualCNN/doubleinput_se_batch=21_epoch=100_lr=0.00005_momentum=0.9_weight_decay=1e-2')
+    action.test_regression(playback_cnn, testloader, draw_or_not=True)
 

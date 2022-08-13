@@ -14,7 +14,7 @@ def train(network, train_loader, test_loader, optimizer, epoch=1):
         network.train()  # Batch Normalization 和 Dropout
         status += 1
         avg_loss = 0  # 每个epoch中所有iteration的平均loss
-        print('training completed:', (status/epoch)*100, '%')
+        print('training completed:', int((status/epoch)*100), '%')
         j = 0
         for batch_idx, (data, target) in enumerate(train_loader):
             output = network(data)
@@ -35,8 +35,8 @@ def train(network, train_loader, test_loader, optimizer, epoch=1):
         epoch_test_loss_mean.append(test_loss_mean)
         print('test loss mean =', test_loss_mean)  # 输出该epoch训练后在测试集上的平均损失
 
-    draw.draw_1d(epoch_loss, xlabel="epoch", ylabel="loss")
-    draw.draw_1d(epoch_test_loss_mean, xlabel="epoch", ylabel="mean test loss")
+    draw.draw_1d(epoch_loss, xlabel="epoch", ylabel="loss", name="train_loss")
+    draw.draw_1d(epoch_test_loss_mean, xlabel="epoch", ylabel="mean test loss", name="train_test_loss")
 
 
 def test_classify(network, testloader):
@@ -58,8 +58,8 @@ def test_regression(network, testloader, draw_or_not=False):
         predict_arr.append(outputs.data.to('cpu'))
         target_arr.append(target.data.to('cpu'))
     if draw_or_not:
-        draw.draw_1d(loss_arr, xlabel='label', ylabel='loss')
-        draw.drwa_2_data([target_arr, predict_arr], ['target', 'predict'], xlabel='label', ylabel='value')
+        draw.draw_1d(loss_arr, xlabel='label', ylabel='loss', name="test_loss")
+        draw.drwa_2_data([target_arr, predict_arr], ['target', 'predict'], xlabel='label', ylabel='value', name="test_ret")
     return loss_arr, predict_arr
 
 
