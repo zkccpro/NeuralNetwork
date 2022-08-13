@@ -2,3 +2,4 @@ data/
 __pycache__/
 .idea/
 output/
+test/__pycache__/
