@@ -1,6 +1,7 @@
 from torch import nn
 import torch.nn.functional as F
 from model import module
+from model import net
 import torch
 
 
@@ -19,7 +20,7 @@ class Unet(nn.Module):
             module.BottleneckBlock(64, 64, BN=BN)
         )
 
-        self.unet_block = module.UnetBlock(64, 64, 2, 2, 4, 
+        self.unet_block = net.unet(64, 64, 2, 2, 4, 
             BN=True, downsample_mode='Max',upsample_mode='Transposed')
 
         self.output_conv = nn.Sequential(

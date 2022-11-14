@@ -58,51 +58,6 @@ class LinearLayer(BlockInterface):
         return self.linear(x)
 
 
-# 全连接层封装，支持Dropout
-class FullConnection(BlockInterface):
-    def __init__(self, input, output, layer_num=2, dropout=0):
-        super().__init__(input, output, dropout=dropout)
-        self.layer_num = layer_num
-        if self.layer_num > 3:
-            print("WARNING: too many layers in full connection")
-        if self.layer_num <= 0:
-            print('ERROR: layer_num of FullConnection must > 0')
-            raise ValueError("layer_num of FullConnection must > 0!")
-
-
-        # 中间层规模
-        mid = 0
-        if output > 100:
-            mid = output if output < input else input
-        elif output <= 100 and output > 10:
-            mid = output * 10 if (output * 10) < input else input
-        else:  # output <= 10
-            mid = output * 100 if (output * 100) < input else input
-
-        # 全连接层，注意最后一层没有Dropout 和 激活函数
-        self.fc_layers = []
-        if layer_num == 1:
-            self.fc_layers.append(nn.Linear(input, output).to(globalParam.device))
-        elif layer_num == 2:
-            self.fc_layers.append(LinearLayer(input, mid, dropout=dropout))
-            self.fc_layers.append(nn.Linear(mid, output).to(globalParam.device))
-        else:  # layer_num >= 3
-            for i in range(layer_num): # start with 0
-                if i == 0:
-                    self.fc_layers.append(LinearLayer(input, input, dropout=dropout))
-                elif i == 1:
-                    self.fc_layers.append(LinearLayer(input, mid, dropout=dropout))
-                elif i < (layer_num - 1):
-                    self.fc_layers.append(LinearLayer(mid, mid, dropout=dropout))
-                else:  # i = layer_num - 1（最后一层）
-                    self.fc_layers.append(nn.Linear(mid, output).to(globalParam.device))
-    
-    def forward(self, x):
-        for layer in self.fc_layers:
-            x = layer(x)
-        return x
-
-
 # 残差模块
 # 参数量：input*output*3*3+output*output*3*3+input*output
 class ResidualBlock(BlockInterface):
@@ -187,53 +142,6 @@ class SEBlock(BlockInterface):
             x = self.conv_side(x)
         x1 = x1 + x
         return F.relu(x1)
-
-
-# Unet模块
-class UnetBlock(BlockInterface):
-    # channel_factor: 通道变化因子
-    # sample_factor: 上下采样因子
-    # single_layers: 单个采样臂（上采样臂或下采样臂）的层数（Unet总层数=single_layers×2）
-    def __init__(self, input_channels, output_channels, 
-                channel_factor, sample_factor, single_layers,
-                BN=True, downsample_mode='Max',upsample_mode='Transposed'):
-        super().__init__(input_channels, output_channels,
-                        BN=BN)
-        self.channel_factor = channel_factor
-        self.sample_factor = sample_factor
-        self.single_layers = single_layers
-        self.layers = []
-        self.mid_output = [None] * (single_layers * 2 + 1)  # n layers have n+1 mid_output
-        self.input_channels = input_channels
-        self.output_channels = output_channels
-        cur_in = input_channels
-        # 下采样
-        for i in range(single_layers):
-            cur_out = cur_in * 2
-            self.layers.append(DownSampleBlock(cur_in, cur_out, sample_factor, mode=downsample_mode, BN=BN))
-            cur_in = cur_out
-        # 上采样
-        for i in range(single_layers):
-            cur_out = cur_in // 2
-            self.layers.append(UpSampleBlock(cur_in, cur_out, sample_factor, BN=BN, mode=upsample_mode))
-            cur_in = cur_out
-        self.outputConv = BottleneckBlock(input_channels, output_channels, BN=BN)
-
-    def forward(self, x):
-        i = 0
-        self.mid_output[0] = x
-        for i in range(len(self.layers)):
-            last_output = self.mid_output[i]  # 上一层输出
-            if i < self.single_layers:
-                self.mid_output[i + 1] = self.layers[i](last_output)
-            else:
-                equal_output = self.mid_output[self.single_layers * 2 - i - 1]  # 上采样层的等效层的输出
-                self.mid_output[i + 1] = self.layers[i](last_output, equal_output)
-            i += 1
-        fin_output = self.mid_output[len(self.mid_output) - 1]
-        if self.input_channels != self.output_channels:
-            fin_output = self.outputConv(fin_output)
-        return fin_output
 
 
 # 下采样模块

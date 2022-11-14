@@ -1,6 +1,7 @@
 from torch import nn
 import torch.nn.functional as F
 from model import module
+from model import net
 import torch
 
 
@@ -16,7 +17,7 @@ class ResidualCNN(nn.Module):
         self.residual2 = module.ResidualBlock(128, 64, BN=BN)
         self.residual3 = module.ResidualBlock(64, 64, BN=BN)
 
-        self.fc = module.FullConnection(1600, 1, layer_num=2, dropout=dropout)
+        self.fc = net.FullConnection(1600, 1, layer_num=2, dropout=dropout)
 
     def forward(self, x):
         input_size = x.size(0)
@@ -85,7 +86,7 @@ class BottleneckCNNDoubleInput(nn.Module):
         self.residual7 = module.BottleneckBlock(256, 256, BN=BN)
         self.residual8 = module.BottleneckBlock(256, 256, BN=BN)
 
-        self.fc = module.FullConnection(6400, 1, layer_num=2, dropout=dropout)
+        self.fc = net.FullConnection(6400, 1, layer_num=2, dropout=dropout)
 
     def forward(self, x):
         # print(x)
@@ -153,7 +154,7 @@ class BottleneckCNN(nn.Module):
         self.residual2 = module.BottleneckBlock(128, 64, BN=BN)
         self.residual3 = module.BottleneckBlock(64, 64, BN=BN)
 
-        self.fc = module.FullConnection(1600, 1, layer_num=2, dropout=dropout)
+        self.fc = net.FullConnection(1600, 1, layer_num=2, dropout=dropout)
 
     def forward(self, x):
         input_size = x.size(0)

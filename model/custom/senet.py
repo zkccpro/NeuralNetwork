@@ -1,6 +1,7 @@
 from torch import nn
 import torch.nn.functional as F
 from model import module
+from model import net
 import torch
 
 
@@ -27,7 +28,7 @@ class SECNNDoubleInput(nn.Module):
         self.residual7 = module.SEBlock(256, 256, BN=BN)
         self.residual8 = module.SEBlock(256, 256, BN=BN)
 
-        self.fc = module.FullConnection(6400, 1, layer_num=2, dropout=dropout)
+        self.fc = net.FullConnection(6400, 1, layer_num=2, dropout=dropout)
 
     def forward(self, x):
         # print(x)
@@ -138,7 +139,7 @@ class BigSECNNDoubleInput(nn.Module):
         self.residual8_3 = module.SEBlock(256, 256, BN=BN)
         self.residual8_4 = module.SEBlock(256, 256, BN=BN)
 
-        self.fc = module.FullConnection(6400, 1, layer_num=2, dropout=dropout)
+        self.fc = net.FullConnection(6400, 1, layer_num=2, dropout=dropout)
 
     def forward(self, x):
         # print(x)

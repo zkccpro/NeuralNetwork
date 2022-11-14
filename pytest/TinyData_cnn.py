@@ -2,6 +2,7 @@ from torch.utils.data import DataLoader
 from core import dataReader, dataSet, action
 from conf import globalParam
 from post_processing import inferencer
+from parse import configParser as cp
 
 
 # 数据集采用TinyData，1w张图片，每21张图片为一个batch，基于同一个图片调整的曝光值
@@ -31,6 +32,7 @@ def ut_TinyData_cnn():
     # prepare model
     cnn = globalParam.bottleneckcnn_network
     reg_inferencer = inferencer.RegressionInference()  # 推理器（后件处理接口）
+    conf_parser = cp.ConfigParser()
 
     # train
     print('--------------------------------------------')
@@ -49,4 +51,3 @@ def ut_TinyData_cnn():
     # print('--------------------------------------------')
     # print('playback model!')
     # action.model_playback(cnn, testloader, gennet_inferencer, conf_parser.conf_dict['workdir']['checkpoint_dir'] + 'epoch_100.pth')
-
