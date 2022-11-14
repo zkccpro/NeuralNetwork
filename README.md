@@ -1,198 +1,258 @@
 # NeuralNetwork
-一个易用的神经网络框架，宗旨是便于搭建任意的神经网络。
+一个易用的神经网络框架，宗旨是灵活搭建任意用途的神经网络。
 
 
 
-## 环境
+## 1. 环境
 
 python3.8
 
 pytorch1.11/1.12
 
-CUDA11.6/11.7
+CUDA11.1+
 
 
 
-## 支持
+## 2. 模块支持
 
-* NN
+### 2.1 Conv
 
-* CNN
+### 2.2 FullConnection
 
-* Residual Block：
+### 2.3 Residual Block
 
-  ```python
-  # module.py
-  # 残差模块
-  class ResidualBlock(nn.Module):
-      def __init__(self, input_channels, output_channels):
-          super(ResidualBlock, self).__init__()
-          self.input_channels = input_channels
-          self.output_channels = output_channels
-  
-          self.conv1 = nn.Conv2d(input_channels, output_channels, kernel_size=3, padding=1)
-          self.conv2 = nn.Conv2d(output_channels, output_channels, kernel_size=3, padding=1)
-          # 旁路卷积，卷积核为1，控制通道改变，不对图像自身产生任何变化
-          self.conv_side = nn.Conv2d(input_channels, output_channels, kernel_size=1)
-  
-      def forward(self, x):
-          y = F.relu(self.conv1(x))
-          y = self.conv2(y)
-        if self.input_channels != self.output_channels:
-            x = self.conv_side(x)
-          return F.relu(x + y)
-  ```
+### 2.4 Bottleneck Block
 
-* Bottleneck Block：
+### 2.5 SE Block
 
-  ```python
-  # module.py
-  # 瓶颈模块
-  class BottleneckBlock(nn.Module):
-      def __init__(self, input_channels, output_channels, low_channels):
-          super(BottleneckBlock, self).__init__()
-          self.input_channels = input_channels
-          self.output_channels = output_channels
-          self.low_channels = low_channels
-  
-          self.conv1 = nn.Conv2d(input_channels, low_channels, kernel_size=1)
-          self.conv2 = nn.Conv2d(low_channels, low_channels, kernel_size=3, padding=1)
-          self.conv3 = nn.Conv2d(low_channels, output_channels, kernel_size=1)
-          # 旁路卷积，卷积核为1，控制通道改变，不对图像自身产生任何变化
-          self.conv_side = nn.Conv2d(input_channels, output_channels, kernel_size=1)
-  
-      def forward(self, x):
-          y = F.relu(self.conv1(x))
-          y = F.relu(self.conv2(y))
-          y = self.conv3(y)
-        if self.input_channels != self.output_channels:
-            x = self.conv_side(x)
-          return F.relu(x + y)
-  ```
+### 2.6 Unet
 
-  
+## 3. 功能/特性支持
 
-## 路径说明
+详细说明 及 接口规范 见`doc/`。
 
-`data/`：存放待训练测试的图像数据。
+### 3.1 统一配置
 
-`model/`：存放训练好的model。
+工程运行时行为的配置文件，在`conf/`路径下。
 
-`test/`：存放单测文件。
+项目使用.py配置文件风格：优点是易读性强、方便书写配置、解起来也容易；但缺点是 还没找到一种良好的配置文件读取方法。（用python内置的vars()函数读配置文件会有很多自定义变量，造成冗余...）
+
+#### 3.1.1 conf/workdir.py
+
+* **version：**since beta-0.5
+
+输出路径相关配置。
+
+#### 3.1.2 conf/globalParam.py
+
+* **version：**since beta-0.1（计划在beta-0.7版本弃用）
+
+包括 device配置、网络配置、优化器配置、学习率调度器配置、预处理接口。
+
+#### 3.1.3 schedule
+
+* **version：**计划在beta-0.7支持。
+
+包括优化器配置、学习率调度器配置、使用设备配置。
+
+#### 3.1.4 network
+
+* **version：**计划在beta-0.7支持。
+
+网络相关的各种设置。
+
+#### 3.1.5 data
+
+* **version：**计划在beta-0.7支持。
+
+包括数据parser配置、预处理配置等。（预处理这块可能还需要一个类似parser的统一接口）
 
 
 
-## 接口说明
+### 3.2 parsers
 
-1. `globalParam.py`：
+提供统一parser接口，在`parse/`路径下。用户可继承之实现自定义parser，用于解析配置文件、解析各种格式的输入数据等，解析后的数据将交给DataReader接口，其负责进一步封装交给DataSet：
 
-   * 训练设备——cpu or cuda？
-   * 网络——在这里实例化你搭建的网络模型。
-   * 优化器——配置每个网络的优化器及训练参数等。
-   * 图像预处理函数——用于可能的图像增强、预处理等任务，在加载数据时执行。
+`parsers->DataReader->DataSet`
 
-2. `handleData.py-DataReaderInterface`：
+暂不支持parser注册，需要在单测文件中调用`dataReader.xxxDataReader`函数时指定parser。
 
-   ```python
-   # 从磁盘读数据的接口，包括一个读数据的方法和一个数据路径。
-   class DataReaderInterface:
-       def __init__(self, path):
-           self.path = path
-           pic_num = 0
-           for _, _, filenames in os.walk(path):
-               pic_num = len(filenames)
-           self.path_pic_num = pic_num
-   
-       # 读数据方法
-       # total_num：训练+测试的所有数据
-       # train_num：参与训练的所有数据
-       # default=True时：采用路径中所有图片进行训练+测试，测试集规模为500
-       # min_stat：最小显示进度的分度，为0时不显示进度，默认为20，即 每读取20分之一的图片显示一次进度
-       # 返回值：{pic_list, test_list, label, test_label}四元组
-       def read(self, total_num=0, train_num=0, default=False, min_stat=20):
-           pass
-   ```
+#### 3.2.1 config parser
 
-3. `handleData.py-CustomedDataSet`：
+* **version：**since beta-0.5
 
-   集成调整数据格式，供DataLoader做训练前的最终处理。
+解工程配置文件到单例字典中。
 
-   
+#### 3.2.2 pictures parser
+
+* **version：**since beta-0.5
+
+解图片类型数据，返回python list给框架。
+
+#### 3.2.2 Csv parser
+
+* **version：**计划在beta-0.7支持。
+
+解csv类型数据标签，返回python list给框架。
+
+#### 3.2.2 Coco parser
+
+* **version：**计划在beta-0.7支持。
+
+解coco类型数据集标注，返回python list给框架。
+
+#### 3.2.2 Voc parser
+
+* **version：**计划在beta-0.7支持。
+
+解voc类型数据集标注，返回python list给框架。
+
+
+
+### 3.3 数据预处理接口
+
+目前用户可在`conf/globalParam.py	`中自定义数据预处理函数，但还不支持配置化和注册。需要在单测文件中的`dataSet.CustomedDataSet`函数中指定。
+
+
+
+### 3.4 推理接口
+
+* **version：**since beta-0.5
+
+提供通用的推理接口，可以继承推理接口以给不同任务定义不一样的推理(inference)、测试(test)、验证(validation)方法。
+
+#### 3.4.1 ClassifyInference
+
+* **version：**since beta-0.5
+
+分类任务的推理策略。（还没完成）
+
+#### 3.4.2 RegressionInference
+
+* **version：**since beta-0.5
+
+回归任务的推理策略。
+
+#### 3.4.3 GennetInference
+
+* **version：**since beta-0.5
+
+生成任务的推理策略。
+
+
+
+### 3.5 结果保存
+
+* **version：**since beta-0.5
+
+目前提供对 曲线图、生成图像、源数据 结果的保存。
+
+#### 3.5.1 曲线图
+
+* **version：**since beta-0.2
+
+目前提供3种画图函数：`draw_1d`、`draw_2d`、`draw_2_data`。分别用来画一维曲线图、二维曲线图、2个数据的曲线图。可以在inference或action里调用。
+
+暂时还没想好怎么把各个画图函数统一成一个接口...
+
+#### 3.5.2 生成图像
+
+* **version：**since beta-0.5
+
+保存生成网络等生成的图像。可以在inference或action里调用。
+
+#### 3.5.3 源数据
+
+* **version：**since beta-0.5
+
+提供一个保存tensor形式数据到csv文件的能力。可以在inference或action里调用。
+
+#### 3.5.4 模型
+
+* **version：**since beta-0.2
+
+以保存完整模型的方式保存到.pth文件，beta-0.5之后提供统一接口。可以在inference或action里调用。
+
+#### 3.5.4 日志
+
+* **version：**计划 beta-0.7支持。
+
+
 
 ## 快速开始
 
-1. 把你的图像数据放到`data/`路径下，并在DataReader中确保数据路径是正确的：
+1. 把你的图像数据放到`data/`路径下，并在DataReader中确保数据路径是正确的。
+
+   
+
+2. 检查单测文件中的执行计划及训练网络符合预期，把单测函数加入main.py：
 
    ```python
-   # test/TinyData_cnn_doubleinput.py  
-   pic_list, test_list, label, test_label = handleData.DataReaderDouble(r"data/TinyData/", r"data/DiffPic/").read(default=True)
-   ```
-
-2. 检查单测文件中的执行计划及训练网络符合预期：
-
-   ```python
-   def ut_TinyData_cnn_doubleinput():
+   from torch.utils.data import DataLoader
+   from core import dataReader, dataSet, action
+   from conf import globalParam
+   from post_processing import inferencer
+   
+   
+   def ut_TinyData_twostage():
        # 1. load data and label
-       pic_list, test_list, label, test_label = handleData.DataReaderDouble(r"data/TinyData/", r"data/DiffPic/").read(default=True)
+       # 2w张图片，训练时稳定占用25G内存
+       pic_list, test_list, label, test_label = dataReader.PredictDataReader([r"data/TinyData/"], None).read(default=True)
    
        # 2. prepare train data
-       dataset = handleData.CustomedDataSet(train_x=pic_list, train_y=label, transform=globalParam.pic_transfer, target_transform=globalParam.label_transfer)
+       dataset = dataSet.CustomedDataSet(train_x=pic_list, train_y=label,
+                                         transform=globalParam.pic_transfer, target_transform=globalParam.label_transfer,
+                                         data_transform=globalParam.pic_data_transfer,
+                                         target_data_transform=globalParam.num_data_transfer)
        dataloader = DataLoader(dataset, batch_size=21, shuffle=False, sampler=None,
                   batch_sampler=None, num_workers=0, collate_fn=None,
                   pin_memory=False, drop_last=False, timeout=0,
                   worker_init_fn=None)
    
        # 2. prepare test data
-       testset = handleData.CustomedDataSet(train=False, test_x=test_list, test_y=test_label, transform=globalParam.pic_transfer, target_transform=globalParam.label_transfer)
+       testset = dataSet.CustomedDataSet(train=False, test_x=test_list, test_y=test_label,
+                                         transform=globalParam.pic_transfer, target_transform=globalParam.label_transfer,
+                                         data_transform=globalParam.pic_data_transfer,
+                                         target_data_transform=globalParam.num_data_transfer)
        testloader = DataLoader(testset, batch_size=1, shuffle=False, sampler=None,
                   batch_sampler=None, num_workers=0, collate_fn=None,
                   pin_memory=False, drop_last=False, timeout=0,
                   worker_init_fn=None)
    
        # prepare model
-       cnn = globalParam.bottleneckcnn_doubleinput_network
+       cnn = globalParam.twostage_network
+       reg_inferencer = inferencer.RegressionInference()  # 推理器（后件处理接口）
    
        # train
        print('--------------------------------------------')
        print('start training!')
-       action.train(cnn, dataloader, testloader, globalParam.bottleneckcnn_doubleinput_optimizer, epoch=21)
+       action.train(cnn, dataloader, testloader,
+                   globalParam.twostage_optimizer, reg_inferencer,
+                   scheduler=globalParam.scheduler, warmup_scheduler=globalParam.warmup_scheduler,
+                   iteration_show=100, max_epoch=100)
    
        # test
        print('--------------------------------------------')
        print('start testing!')
-       action.test_regression(cnn, testloader, draw_or_not=True)
+       action.test(cnn, testloader, reg_inferencer)
    
-       # # save，不要轻易save，容易冲掉以前的模型！
-       # print('--------------------------------------------')
-       # print('saving model!')
-       # action.save_model(cnn, 'model/ResidualCNN/neck_batch=21_epoch=100_lr=0.00002_momentum=0.9_weight_decay=1e-2')
-       #
-       # # playback
+       # playback
        # print('--------------------------------------------')
        # print('playback model!')
-       # playback_cnn = model.BottleneckCNN()  # 这里记得改！
-       # action.model_playback(playback_cnn, 'model/ResidualCNN/neck_batch=21_epoch=100_lr=0.00002_momentum=0.9_weight_decay=1e-2')
-       # action.test_regression(playback_cnn, testloader, draw_or_not=True)
+       # action.model_playback(cnn, testloader, gennet_inferencer, conf_parser.conf_dict['workdir']['checkpoint_dir'] + 'epoch_100.pth')
+   
+   
    ```
 
 3. 检查`globalParam.py`中的网络及训练参数符合预期：
 
    ```python
    # 网络
-   cnn_network = model.BigCNN().to(device)
-   nn_network = model.NN().to(device)
-   residualcnn_network = model.ResidualCNN().to(device)
-   bottleneckcnn_network = model.BottleneckCNN().to(device)
-   bottleneckcnn_doubleinput_network = model.BottleneckCNNDoubleInput().to(device)
-   
+   ...
    # 优化器
-   # lr:学习率，不宜过大, momentum:优化器冲量
-   # weight_decay: 权重衰减系数（加上这个就相当于对权重进行L2范数约束，这个参数就相当于λ）
-   cnn_optimizer = torch.optim.SGD(cnn_network.parameters(), lr=0.00001, momentum=0.9, weight_decay=1e-2)
-   nn_optimizer = torch.optim.SGD(nn_network.parameters(), lr=0.2)
-   residualcnn_optimizer = torch.optim.SGD(residualcnn_network.parameters(), lr=0.00001, momentum=0.9, weight_decay=1e-2)
-   bottleneckcnn_optimizer = torch.optim.SGD(bottleneckcnn_network.parameters(), lr=0.00002, momentum=0.9, weight_decay=1e-2)
-   bottleneckcnn_doubleinput_optimizer = torch.optim.SGD(bottleneckcnn_doubleinput_network.parameters(), lr=0.00002, momentum=0.9, weight_decay=1e-2)
+   ...
+   # 学习率调度器
+   ...
    ```
 
 4. 跑一下！
