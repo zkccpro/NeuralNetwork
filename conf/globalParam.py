@@ -2,6 +2,7 @@ from model.custom import resnet
 from model.custom import gennet
 from model.custom import senet
 from model.custom import twostage
+from model.custom import dueling_dqn
 import torch
 from torch.optim import lr_scheduler
 import PIL
@@ -21,7 +22,8 @@ bottleneckcnn_doubleinput_network = resnet.BottleneckCNNDoubleInput(BN=False, dr
 secnn_doubleinput_network = senet.BigSECNNDoubleInput(BN=False, dropout=0).to(device)
 unet_network = gennet.Unet(BN=False).to(device)
 cascade_unet_network = gennet.CascadeUnet(BN=False).to(device)
-twostage_network = twostage.TwostageNet(BN=False, dropout=0.2).to(device)
+twostage_network = twostage.TwostageNet(BN=False, dropout=0).to(device)
+dqn_network = dueling_dqn.DuelingDQN(dropout=0).to(device)
 
 # 优化器
 # lr:学习率，不宜过大, momentum:优化器冲量
@@ -35,8 +37,8 @@ unet_optimizer = torch.optim.Adam(unet_network.parameters(), lr=5e-4)
 cascade_unet_optimizer = torch.optim.SGD(cascade_unet_network.parameters(), lr=5e-5, momentum=0.9)
 twostage_optimizer = torch.optim.Adam(twostage_network.parameters(), lr=5e-4)
 
-scheduler = lr_scheduler.MultiStepLR(secnn_doubleinput_optimizer, milestones=[30, 60, 80], gamma=0.4)
-warmup_scheduler = lrScheduler.WarmupLR(secnn_doubleinput_optimizer, warmup_steps=800, warmup_start_lr=1e-5)
+scheduler = lr_scheduler.MultiStepLR(twostage_optimizer, milestones=[30, 60, 80], gamma=0.4)
+warmup_scheduler = lrScheduler.WarmupLR(twostage_optimizer, warmup_steps=800, warmup_start_lr=1e-5)
 
 # 图像变换函数（预处理）
 def pic_transfer(src):
@@ -55,10 +57,10 @@ def pic_data_transfer(data):
     for channel in data:
         for i in range(len(channel)):
             channel[i] = np.asarray(channel[i])
-            # 归一化
-            section = np.max(channel[i]) - np.min(channel[i])
-            if section != 0:
-                channel[i] = (channel[i] - np.min(channel[i])) / section
+            # 标准化
+            stdvar = np.std(channel[i])
+            if stdvar != 0:
+                channel[i] = (channel[i] - np.mean(channel[i])) / stdvar
     return torch.from_numpy(np.array(data)).float()  # for mse loss: float,nll loss: long
 
 
@@ -67,10 +69,10 @@ def pic_data_transfer(data):
 def label_pic_data_transfer(data):
     for i in range(len(data)):
         data[i] = np.expand_dims(np.asarray(data[i]), axis=0)  # 图像做label时 这里必须升维，否则测试时算的loss不对
-        # 归一化
-        section = np.max(data[i]) - np.min(data[i])
-        if section != 0:
-            data[i] = (data[i] - np.min(data[i])) / section
+        # 标准化
+        stdvar = np.std(data[i])
+        if stdvar != 0:
+            data[i] = (data[i] - np.mean(data[i])) / stdvar
     return torch.from_numpy(np.array(data)).float()  # for mse loss: float,nll loss: long
 
 
