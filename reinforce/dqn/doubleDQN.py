@@ -41,7 +41,7 @@ class DoubleDQNAgent(Agent):
     
     def backup(self):
         self.obj_Q = self.est_Q
-        print('INFO: backup estimate Qnet to object Qnet')
+        # print('INFO: backup estimate Qnet to object Qnet')
 
 
 class DoubleDQNTrainer(Trainer):
@@ -51,23 +51,24 @@ class DoubleDQNTrainer(Trainer):
         self.exprience_pool = Expriences(exp_pool_size)
         self.gamma = gamma
 
-    def iter(self):
+    def iter(self, log):
         """
         Args: None
         complate one iteration of A episode
         implyment expriment pool strategy
         Returns: True, continue can be itered or False, game over (Bool)
         """
-        exp = self.get_exp()
+        exp = self.get_exp(log)
         if exp == None:
             return False
-        # print(exp) # YES!!!
+        if log:
+            print(f'cur_exp: {exp}')
         self.exprience_pool.put(exp)
         exps = self.exprience_pool.get_n_rand(self.batch_size)
-        self.update(exps)
+        self.update(exps, log)
         return True
     
-    def update(self, exps):
+    def update(self, exps, log):
         """
         Args: list of <si, ri, ai, si+1> (list(Exprience))
         update agent with list of exps
@@ -83,10 +84,11 @@ class DoubleDQNTrainer(Trainer):
             # act = exps[i].a.to_tensor()
             # outputs.append(self.agent.est_decision(exps[i].s).to_tensor().gather(1, exps[i].a.to_tensor()))
         outputs = torch.cat(outputs, 0)  # torch.Size([batch,7])
-        # print(outputs, targets)
-        losses = self._cal_loss(outputs, targets.detach())
-        # print(losses)
-        self.agent.update(losses)
+        loss = self._cal_loss(outputs, targets.detach())  # torch.Size([])
+        if log:
+            print(f'cur_avg_loss: {float(loss.mean())}')
+            print(f'cur_avg_mQ: {float(outputs.mean())}')
+        self.agent.update(loss)
 
     def _cal_target(self, exps):
         # 你现在这么搞，意味着你的目标tensor的1个batch中只有1个数
@@ -116,7 +118,7 @@ class DoubleDQNTrainer(Trainer):
                 targets.append(target)
         return torch.cat(targets, 0)  # torch.Size([batch, 7])
 
-    def get_exp(self):
+    def get_exp(self, log):
         """
         Can be overrided
         Args: None
@@ -125,13 +127,9 @@ class DoubleDQNTrainer(Trainer):
         """
         stat = self.env.get_stat()
         act = self.agent.est_decision(stat)
-        rwd, nxt_stat = self.env.step(act)
+        rwd, nxt_stat = self.env.step(act, log)
         if nxt_stat == None:
             return None
-        # stat.feats["Img"] = None
-        # stat.gray_tensor = None
-        # nxt_stat.feats["Img"] = None
-        # nxt_stat.gray_tensor = None
         rwd = float(rwd.to('cpu'))
         act.tensor = None
         return Exprience(stat, rwd, act, nxt_stat)

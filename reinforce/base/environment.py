@@ -25,7 +25,7 @@ class Status:
         """
         range = np.max(data) - np.min(data)
         if range != 0:
-            data - np.min(data) / range
+            return (data - np.min(data)) / range
         else:
             return data
 
@@ -89,11 +89,11 @@ class Env:
     def get_last_stat(self):
         return self.last_stat
     
-    def step(self, action):
+    def step(self, action, log):
         self._update_stat(action)
         if self.stat == None:
             return 0, None
-        rwd = self._cal_reward()
+        rwd = self._cal_reward(log)
         return rwd, self.stat
 
     def reset(self, stream):
@@ -102,7 +102,7 @@ class Env:
         self.last_stat = self.stat
         return self.stat
     
-    def _cal_reward(self):
+    def _cal_reward(self, log):
         """
         Need be overrided
         Args: None

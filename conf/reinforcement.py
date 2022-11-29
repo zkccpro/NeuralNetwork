@@ -13,7 +13,7 @@ status_conf = dict(
 
 optimizer_conf = dict(
     type = "Adam",
-    lr = 5e-4
+    lr = 5e-3
 )
 
 agent_conf = dict(
@@ -23,7 +23,8 @@ agent_conf = dict(
 
 env_conf = dict(
     stat=env.EV_Status(**status_conf),
-    network=globalParam.twostage_network
+    network=globalParam.twostage_network,
+    model_path='data/Rein/env_model/epoch_100.pth'
 )
 
 trainer_conf = dict(
@@ -31,7 +32,7 @@ trainer_conf = dict(
     env=env.SupervisedEnv(**env_conf),
     streamset=env.Videoset(root_path),
     loss_func=torch.nn.MSELoss(),
-    batch_size=128,
-    exp_pool_size=10000,
+    batch_size=8,
+    exp_pool_size=40,
     gamma=0.9
 )

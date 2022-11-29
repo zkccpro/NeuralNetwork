@@ -11,7 +11,7 @@ class Exprience:
         self.ns = nxt_stat
 
     def __repr__(self):
-        return f'[stat]: {self.s}, [rwd]: {self.r}, [act]: {self.a}, [nxt_stat]: {self.ns}\n'
+        return f'[stat]: {self.s}, [rwd]: {self.r}, [act]: {self.a}, [nxt_stat]: {self.ns}'
 
 
 class Expriences:
@@ -58,6 +58,7 @@ class Trainer:
         self.loss_func = loss_func
         
     def train(self, max_epoch=100, max_step=-1, backup_steps=100, log_steps=1000):
+        log = False
         # epoches
         for cur_epoch in range(max_epoch):
             # episodes
@@ -69,10 +70,13 @@ class Trainer:
                     while(True):
                         if cur_step % backup_steps == 0:
                             self.agent.backup()
-                        # if cur_step % log_steps == 0:
+                        if cur_step % log_steps == 0:
                             # LOG
-                        print(f'INFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]: ')
-                        if not self.iter():
+                            print(f'INFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
+                            log = True
+                        else:
+                            log = False
+                        if not self.iter(log):
                             break
                         cur_step += 1
                 else:
@@ -81,11 +85,14 @@ class Trainer:
                             self.agent.backup()
                         if cur_step % log_steps == 0:
                             # LOG
-                            print(f'INFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]: ')
-                        if not self.iter():
+                            print(f'INFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
+                            log = True
+                        else:
+                            log = False
+                        if not self.iter(log):
                             break
 
-    def iter(self):
+    def iter(self, log):
         """
         Can be overrided
         Args: None
@@ -99,7 +106,7 @@ class Trainer:
         self.update(exp)
         return True
 
-    def update(self, exp):
+    def update(self, exp, log):
         """
         Args: <si, ri, ai, si+1> (Exprience)
         update agent with ONE exp

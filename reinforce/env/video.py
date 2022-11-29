@@ -30,7 +30,7 @@ class EV_Status(Status):
         img = cv2.resize(self.feats["Img"], dsize=(240, 240))
         if gray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-            img = np.transpose(img, (0, 1))
+            # img = np.transpose(img, (0, 1))
             img = self.np_std(img)
             return torch.from_numpy(img).float().unsqueeze(0).unsqueeze(0).to(globalParam.device)  # raise dim to torch.Size([1,1,h,w]
         else:
@@ -77,50 +77,84 @@ class EV_QAction(Action):
         return self
     
     def __repr__(self):
-        return f'vals: {self.vals}; tensor: {self.tensor}'
+        return f'{self.vals}'
 
 
 class SupervisedEnv(Env):
     """Using an well-trained network to modeling the environment"""
-    def __init__(self, stat, network):
+    def __init__(self, stat, network, model_path=''):
         super().__init__(stat)
-        self.model = network
+        if model_path != '':
+            self.model = torch.load(model_path)
+        else:
+            print('WARN: The model is not read from the path!')
+            self.model = network
     
-    def _cal_reward(self):
+    def _cal_reward(self, log):
         """
         Args: None
         calulate reward of cur stat with model
         Returns: reward (torch.Size([1]))
         """
-        scores = self.inference()  # torch.Size([2, 1])
+        scores = self.inference(log)  # torch.Size([2, 1])
         assert scores.dim() >= 2
-        last_score = 2 - 2 * torch.abs(scores[0])  # torch.Size([1])
-        score = 2 - 2 * torch.abs(scores[1]) # torch.Size([1])
+        
+        last_score = torch.abs(scores[0])
+        score = torch.abs(scores[1])
+        last_score = 2 - 2 * last_score  # torch.Size([1])
+        score = 2 - 2 * score # torch.Size([1])
+        last_score = last_score if last_score > 0 else torch.tensor([0])
+        score = score if score > 0 else torch.tensor([0])
+        if log:
+            print(f'score: {score}, last_score: {last_score}')
+        rwd = torch.tensor([0])
+        if score < 1.8 and last_score < 1.8:
+            if score > last_score:
+                rwd = score
+            else:
+                if last_score - score <= 0.2:
+                    rwd = -1 * (2 - score)
+                else:
+                    rwd = -2 * (2 - score)
 
-        if score < last_score:
-            rwd = score - 3 * last_score
-        elif score >= last_score and score < 1.8:
-            rwd = 2 * score - last_score
-        else:  # score >= 1.8
-            rwd = 2 * score - last_score + 1
+        elif score >= 1.8 and last_score >= 1.8:
+            if score == last_score:
+                rwd = 2 * score
+            elif score > last_score:
+                rwd = 3 * score
+            else:
+                rwd = score
+
+        elif score >= 1.8 and last_score < 1.8:
+            rwd = 2 * score
+
+        else: # score < 1.8 and last_score >= 1.8:
+            rwd = score
 
         return rwd
 
-    def inference(self):
+    def inference(self, log):
         """
         Args: None
         use last stat and cur stat as input (concat them in one batch)
         inference the model, get output scores(torch.Size([2, 1])),then parse the output to list
         Returns: env model output((torch.Size([2, 1]))
         """
-        assert self.model != None
-
-        img = self.stat.to_tensor(gray=True)
-        last_img = self.last_stat.to_tensor(gray=True)
-        input = torch.cat([last_img, img], 0)
-        self.model.eval()
-        output = self.model(input)
+        # 直接用环境状态
+        output = torch.tensor([[self.last_stat.feats["EV"] / 2], [self.stat.feats["EV"] / 2]])
         return output
+        # 用模型，但模型不太给力啊...
+        # assert self.model != None
+
+        # img = self.stat.to_tensor(gray=True)
+        # last_img = self.last_stat.to_tensor(gray=True)
+        # input = torch.cat([last_img, img], 0)
+        # self.model.eval()
+        # output = self.model(input)
+        # if log:
+        #     print(f'env_output: {output}')
+        # return output
+        
 
 
 class EV_VideoSpace(Stream):
