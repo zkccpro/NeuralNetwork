@@ -55,25 +55,23 @@ class EV_QAction(Action):
         self.acts = acts
         # self.tensor is Q-function
 
-    def parse_from_tensor(self, tensor):
+    def parse_from_tensor(self, tensor, eps=1):
         """
-        Args: tensor to parse (torch.Size([1,7])), batch_size must be 1
+        Args: 
+        tensor: tensor to parse (torch.Size([1,7])), batch_size must be 1; 
+        eps: prob of the max Q value action greed, 1 means never random(all in greedy)
         parse network output([estimate] Q-Function) to vals.[EV]
         use random greedy as strategy
         Returns: self (Action)
         """
+        assert tensor.dim() > 1, 'ERROR: output tensor dim error!'
+        assert tensor.shape[0] < 2, 'ERROR: batch_size of est network output must be 1!'
         super().parse_from_tensor(tensor)
-        # 我甚至觉得根本不需要升维，torch库应该是自动处理batch的？
-        # 就是说，哪怕只有batch_size=1，网络输出的tensor应该也是考虑好升维的
-        # if self.tensor.dim() == self.dims:
-        #     self.tensor.unsqueeze(0)  # raise dim for batch
-        # elif self.tensor.dim() < self.dims or self.tensor.dim() > self.dims + 1:
-        #     print("ERROR: dim wrong of output tensor")
-        # else: # self.tensor.dim() == self.dims + 1, Nothing tobe done
-        #     pass
-        max_idx = int(torch.argmax(tensor))
-        self.act_idx = max_idx
-        self.vals["EV"] = self.acts[max_idx]
+        if random.random() < eps:
+            self.act_idx = int(torch.argmax(tensor))
+        else:
+            self.act_idx = random.randrange(0, tensor.shape[1])
+        self.vals["EV"] = self.acts[self.act_idx]
         return self
     
     def __repr__(self):

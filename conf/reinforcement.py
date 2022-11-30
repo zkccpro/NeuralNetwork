@@ -11,9 +11,14 @@ status_conf = dict(
     img = None
 )
 
+eps_scheduler_conf = dict(
+    steps=1000,
+    max_eps=0.95
+)
+
 optimizer_conf = dict(
     type = "Adam",
-    lr = 5e-3
+    lr = 1e-5
 )
 
 agent_conf = dict(
@@ -34,5 +39,14 @@ trainer_conf = dict(
     loss_func=torch.nn.MSELoss(),
     batch_size=8,
     exp_pool_size=40,
-    gamma=0.9
+    gamma=0.9,
+    eps=0.5,
+    eps_scheduler=dqn.QuadricScheduler(**eps_scheduler_conf)
+)
+
+train_param = dict(
+    max_epoch=100,
+    max_step=-1,
+    backup_steps=5,
+    log_steps=100
 )

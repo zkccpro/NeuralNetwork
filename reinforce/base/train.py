@@ -72,7 +72,7 @@ class Trainer:
                             self.agent.backup()
                         if cur_step % log_steps == 0:
                             # LOG
-                            print(f'INFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
+                            print(f'\nINFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
                             log = True
                         else:
                             log = False
@@ -85,7 +85,7 @@ class Trainer:
                             self.agent.backup()
                         if cur_step % log_steps == 0:
                             # LOG
-                            print(f'INFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
+                            print(f'\nINFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
                             log = True
                         else:
                             log = False
@@ -135,7 +135,7 @@ class Trainer:
         """
         return self.loss_func(output, target)
 
-    def get_exp(self):
+    def get_exp(self, greedy_prob, log):
         """
         Can be overrided
         Args: None
