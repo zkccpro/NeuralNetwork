@@ -17,10 +17,12 @@ class Stream:
         """
         pass
 
-    def nxt_frame(self, action):
+    def nxt_frame(self, action, interval=1):
         """
         NEED to be overrided
-        Args: action to be executed (Action)
+        Args:
+        action, to be executed (Action)
+        interval, every n frame get one to train(Int)
         execute action to approch next status
         Returns: next status (Status), return None if game is over!
         """

@@ -18,7 +18,7 @@ eps_scheduler_conf = dict(
 
 optimizer_conf = dict(
     type = "Adam",
-    lr = 1e-5
+    lr = 5e-4
 )
 
 agent_conf = dict(
@@ -28,6 +28,7 @@ agent_conf = dict(
 
 env_conf = dict(
     stat=env.EV_Status(**status_conf),
+    interval=10,
     network=globalParam.twostage_network,
     model_path='data/Rein/env_model/epoch_100.pth'
 )
@@ -48,5 +49,5 @@ train_param = dict(
     max_epoch=100,
     max_step=-1,
     backup_steps=5,
-    log_steps=100
+    log_steps=env_conf['interval'] * 100
 )

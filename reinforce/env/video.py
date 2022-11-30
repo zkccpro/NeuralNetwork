@@ -80,8 +80,8 @@ class EV_QAction(Action):
 
 class SupervisedEnv(Env):
     """Using an well-trained network to modeling the environment"""
-    def __init__(self, stat, network, model_path=''):
-        super().__init__(stat)
+    def __init__(self, stat, network, model_path='', interval=1):
+        super().__init__(stat, interval)
         if model_path != '':
             self.model = torch.load(model_path)
         else:
@@ -194,9 +194,11 @@ class EV_VideoSpace(Stream):
         else:
             return EV_Status(self.cur_ev, frame)
 
-    def nxt_frame(self, action):
+    def nxt_frame(self, action, interval=1):
         """
-        Args: action to be executed (Action)
+        Args: 
+        action, action to be executed (Action)
+        interval, every n frame get one to train(Int)
         execute action to approch next frame
         Returns: next status (Status), return None if video is ended.
         """
@@ -205,7 +207,7 @@ class EV_VideoSpace(Stream):
             self.cur_ev = self.max_ev
         if self.cur_ev < self.min_ev:
             self.cur_ev = self.min_ev
-        self.cur_frame += 1
+        self.cur_frame += interval
         select_video = self.videos[self.cur_ev]
         select_video.set(cv2.CAP_PROP_POS_FRAMES, self.cur_frame)
         ok, frame = select_video.read()

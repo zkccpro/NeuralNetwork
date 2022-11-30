@@ -79,9 +79,10 @@ class Env:
     supply a base Env for users to design their environments
     """
 
-    def __init__(self, stat):
+    def __init__(self, stat, interval=1):
         self.stat = stat
         self.last_stat = stat
+        self.interval = interval
     
     def get_stat(self):
         return self.stat
@@ -113,5 +114,5 @@ class Env:
     
     def _update_stat(self, action):
         self.last_stat = self.stat
-        self.stat = self.stream.nxt_frame(action)
+        self.stat = self.stream.nxt_frame(action, self.interval)
         return self.stat

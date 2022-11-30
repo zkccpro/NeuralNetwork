@@ -82,7 +82,6 @@ class DoubleDQNTrainer(Trainer):
         Returns: None
         """
         targets = self._cal_target(exps)  # torch.Size([batch])
-        print(targets.shape)
         outputs = []
         for i, _ in enumerate(exps):
             cur_act = self.agent.est_decision(exps[i].s)

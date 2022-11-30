@@ -78,7 +78,7 @@ class Trainer:
                             log = False
                         if not self.iter(log):
                             break
-                        cur_step += 1
+                        cur_step += self.env.interval
                 else:
                     for cur_step in range(max_step):
                         if cur_step % backup_steps == 0:
