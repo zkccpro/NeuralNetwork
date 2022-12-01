@@ -24,7 +24,8 @@ optimizer_conf = dict(
 )
 
 agent_conf = dict(
-    network=globalParam.dqn_network,
+    est_network=globalParam.dqn_network_est,
+    obj_network=globalParam.dqn_network_obj,
     optimizer=optimizer_conf,
 )
 

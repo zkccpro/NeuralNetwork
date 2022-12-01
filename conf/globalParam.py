@@ -23,7 +23,8 @@ secnn_doubleinput_network = senet.BigSECNNDoubleInput(BN=False, dropout=0).to(de
 unet_network = gennet.Unet(BN=False).to(device)
 cascade_unet_network = gennet.CascadeUnet(BN=False).to(device)
 twostage_network = twostage.TwostageNet(BN=False, dropout=0).to(device)
-dqn_network = dueling_dqn.DuelingDQN(dropout=0).to(device)
+dqn_network_est = dueling_dqn.DuelingDQN(dropout=0).to(device)
+dqn_network_obj = dueling_dqn.DuelingDQN(dropout=0).to(device)
 
 # 优化器
 # lr:学习率，不宜过大, momentum:优化器冲量

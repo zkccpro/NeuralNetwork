@@ -15,9 +15,9 @@ action_conf = dict(
 
 
 class DoubleDQNAgent(Agent):
-    def __init__(self, network, optimizer):
-        self.obj_Q = network
-        self.est_Q = network
+    def __init__(self, est_network, obj_network, optimizer):
+        self.est_Q = est_network
+        self.obj_Q = obj_network
         self.est_Q_optimizer = self.gen_optimizer(self.est_Q, optimizer)
 
     def obj_decision(self, stat):
@@ -42,7 +42,7 @@ class DoubleDQNAgent(Agent):
         self.est_Q_optimizer.step()
 
     def backup(self):
-        self.obj_Q = self.est_Q
+        self.obj_Q.load_state_dict(self.est_Q.state_dict())
 
 
 class DoubleDQNTrainer(Trainer):
