@@ -16,6 +16,12 @@ class EV_Status(Status):
         self.feats["EV"] = ev
         self.feats["Img"] = img  # cv2 Image
 
+    def get_ev(self):
+        return self.feats["EV"]
+    
+    def get_img(self):
+        return self.feats["Img"]
+
     def to_tensor(self, gray=False):
         """
         Args: None
@@ -27,7 +33,7 @@ class EV_Status(Status):
         # if self.gray_tensor != None and gray:
         #     return self.gray_tensor
 
-        img = cv2.resize(self.feats["Img"], dsize=(240, 240))
+        img = cv2.resize(self.get_img(), dsize=(240, 240))
         if gray:
             img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
             # img = np.transpose(img, (0, 1))
@@ -40,7 +46,7 @@ class EV_Status(Status):
             return torch.from_numpy(img).float().unsqueeze(0).to(globalParam.device)  # raise dim to torch.Size([1,3,h,w]
 
     def __repr__(self):
-        return f'{self.feats["EV"]}'
+        return f'{self.get_ev()}'
 
 
 class EV_QAction(Action):
@@ -53,7 +59,10 @@ class EV_QAction(Action):
         self.vals["EV"] = ev
         self.act_idx = 0  # the index in self.acts of cur action choise 
         self.acts = acts
-        # self.tensor is Q-function
+        self.q_val = None  # Q-function value
+
+    def get_ev(self):
+        return self.vals["EV"]
 
     def parse_from_tensor(self, tensor, eps=1):
         """
@@ -73,9 +82,9 @@ class EV_QAction(Action):
             self.act_idx = random.randrange(0, tensor.shape[1])
         self.vals["EV"] = self.acts[self.act_idx]
         return self
-    
+
     def __repr__(self):
-        return f'{self.vals}'
+        return f'{self.get_ev()}'
 
 
 class SupervisedEnv(Env):
@@ -139,7 +148,7 @@ class SupervisedEnv(Env):
         Returns: env model output((torch.Size([2, 1]))
         """
         # 直接用环境状态
-        output = torch.tensor([[self.last_stat.feats["EV"] / 2], [self.stat.feats["EV"] / 2]])
+        output = torch.tensor([[self.last_stat.get_ev() / 2], [self.stat.get_ev() / 2]])
         return output
         # 用模型，但模型不太给力啊...
         # assert self.model != None
@@ -201,7 +210,7 @@ class EV_VideoSpace(Stream):
         execute action to approch next frame
         Returns: next status (Status), return None if video is ended.
         """
-        self.cur_ev = round(self.cur_ev + action.vals["EV"], 1)
+        self.cur_ev = round(self.cur_ev + action.get_ev(), 1)
         if self.cur_ev > self.max_ev:
             self.cur_ev = self.max_ev
         if self.cur_ev < self.min_ev:

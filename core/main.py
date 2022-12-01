@@ -3,7 +3,7 @@ import sys
 o_path = os.getcwd()  # 把工程根路径添加到python环境变量
 sys.path.append(o_path)
 import utility
-from pytest import TinyData_unet, TinyData_cnn_doubleinput, TinyData_cnn, TinyData_twostage
+from pytest import TinyData_unet, TinyData_cnn_doubleinput, TinyData_cnn, TinyData_twostage, reinforcement_test
 from conf import workdir as wd
 from parse import configParser as cp
 
@@ -29,9 +29,9 @@ if __name__ == '__main__':
     os.mkdir(conf_parser.conf_dict['workdir']['log_dir'])
     os.mkdir(conf_parser.conf_dict['workdir']['result_dir'])
 
-    TinyData_cnn.ut_TinyData_cnn()
-    TinyData_cnn_doubleinput.ut_TinyData_cnn_doubleinput()
-    TinyData_unet.ut_TinyData_unet()
-    TinyData_twostage.ut_TinyData_twostage()
+    # TinyData_cnn.ut_TinyData_cnn()
+    # TinyData_cnn_doubleinput.ut_TinyData_cnn_doubleinput()
+    # TinyData_unet.ut_TinyData_unet()
+    # TinyData_twostage.ut_TinyData_twostage()
+    reinforcement_test.reinforcement_test()
     print('hello my fist NN model!')
-

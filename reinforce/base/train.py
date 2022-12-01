@@ -3,6 +3,9 @@ import random
 import torch
 import numpy as np
 import time
+from post_processing import draw
+from post_processing import saver
+from parse import configParser as cp
 
 
 class Exprience:
@@ -60,10 +63,24 @@ class Trainer:
         self.valset = valset
         self.loss_func = loss_func
 
+        self.train_epoch_mean_loss = 0
+        self.train_epoch_mean_mQ = 0
+        self.train_epoch_mean_rwd = 0
+
+        self.train_epoch_losses = []
+        self.train_epoch_mQs = []
+        self.train_epoch_rwds = []
+
+        self.val_epoch_mQs = []
+        self.val_epoch_rwds = []
+
+        self.conf_parser = cp.ConfigParser()
+
     def train(self, max_epoch=100, max_step=-1, backup_steps=100, log_steps=1000):
         log = False
         # epoches
         for cur_epoch in range(max_epoch):
+            epoch_steps = 0
             # episodes
             for cur_episode, stream in enumerate(self.trainset):
                 self.env.reset(stream)
@@ -83,7 +100,9 @@ class Trainer:
                         if not self.iter(log):
                             break
                         cur_step += self.env.interval
+                        epoch_steps += 1
                 else:  # max_step >= 1
+                    epoch_steps += max_step
                     for cur_step in range(max_step):
                         if cur_step % backup_steps == 0:
                             self.agent.backup()
@@ -97,6 +116,42 @@ class Trainer:
                             break
             print(f'\n----------Start validating in epoch {cur_epoch + 1}---------')
             self.validation(max_step)
+            saver.ModelSaver().to_disk(self.agent.obj_Q, self.conf_parser.conf_dict['workdir']['checkpoint_dir'], 'epoch_' + str(cur_epoch + 1))
+
+            print('total_frames =', epoch_steps)
+            self.train_epoch_mean_loss /= epoch_steps
+            self.train_epoch_mean_mQ /= epoch_steps
+            self.train_epoch_mean_rwd /= epoch_steps
+            self.train_epoch_losses.append(self.train_epoch_mean_loss)
+            self.train_epoch_mQs.append(self.train_epoch_mean_mQ)
+            self.train_epoch_rwds.append(self.train_epoch_mean_rwd)
+            self.train_epoch_mean_loss = 0
+            self.train_epoch_mean_mQ = 0
+            self.train_epoch_mean_rwd = 0
+
+        print(self.train_epoch_losses)
+        print(self.train_epoch_mQs)
+        print(self.train_epoch_rwds)
+        print(self.val_epoch_mQs)
+        print(self.val_epoch_rwds)
+
+        csv_data = [
+            ['train_epoch_losses', 'train_epoch_mQs', 'train_epoch_rwds', 'val_epoch_mQs', 'val_epoch_rwds'],
+            self.train_epoch_losses,
+            self.train_epoch_mQs,
+            self.train_epoch_rwds,
+            self.val_epoch_mQs,
+            self.val_epoch_rwds,
+        ]
+
+        saver.DataSaver().to_csv(csv_data, self.conf_parser.conf_dict['workdir']['result_dir'], 'train_epoch_losses')
+
+        draw.draw_1d(self.train_epoch_losses, xlabel='epoch', ylabel='loss', name="train_epoch_losses")
+        draw.draw_1d(self.train_epoch_mQs, xlabel='epoch', ylabel='max Q', name="train_epoch_mQs")
+        draw.draw_1d(self.train_epoch_rwds, xlabel='epoch', ylabel='reward', name="train_epoch_rwds")
+
+        draw.draw_1d(self.val_epoch_mQs, xlabel='epoch', ylabel='max Q', name="val_epoch_mQs")
+        draw.draw_1d(self.val_epoch_rwds, xlabel='epoch', ylabel='reward', name="val_epoch_rwds")
 
     def validation(self, max_step):
         pass

@@ -1,5 +1,6 @@
 import torch
 
+
 class Agent:
     """
     Can to be inherited
@@ -16,7 +17,7 @@ class Agent:
         self.network = network
         self.optimizer = self.gen_optimizer(network, optimizer)
         self.act = action
-    
+
     def decision(self, stat):
         """
         Can be overrided
@@ -27,7 +28,7 @@ class Agent:
         input = stat.to_tensor()
         output = self.inference(self.network, input)
         return self.act.parse_from_tensor(ouput)
-    
+
     def inference(self, network, input):
         assert network != None
         network.eval()
@@ -46,7 +47,7 @@ class Agent:
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-    
+
     def backup(self):
         """
         Can be overrided
@@ -64,5 +65,3 @@ class Agent:
             return torch.optim.SGD(network.parameters(), **optimizer)
         else:
             return torch.optim.Adam(network.parameters(), **optimizer)
-
-    

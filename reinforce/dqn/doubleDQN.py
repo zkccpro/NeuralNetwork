@@ -5,6 +5,7 @@ from torch import Tensor
 from ..env import video
 from conf import globalParam
 from core import utility as util
+import numpy as np
 
 
 action_conf = dict(
@@ -70,6 +71,7 @@ class DoubleDQNTrainer(Trainer):
         if log:
             print(f'cur_eps: {self.eps}')
             print(f'cur_exp: {exp}')
+            self.train_epoch_mean_rwd += exp.r
         self.exprience_pool.put(exp)
         exps = self.exprience_pool.get_n_rand(self.batch_size)
         self.update(exps, log)
@@ -78,7 +80,10 @@ class DoubleDQNTrainer(Trainer):
     def validation(self, max_step):
         interval = self.env.interval
         self.env.interval = 1
+        avg_rwd = 0
+        avg_mQ = 0
         for cur_episode, stream in enumerate(self.valset):
+            epoch_steps = 0
             print(f'inferencing val stream [{cur_episode + 1}/{len(self.valset)}]: ')
             self.env.reset(stream)
             format = util.ProgressFormat(len(stream), interval=100)
@@ -90,18 +95,25 @@ class DoubleDQNTrainer(Trainer):
                     exp = self.get_exp(False, eps=1)
                     if exp == None:
                         break
-                    # LOG
-                    
+                    avg_rwd += exp.r
+                    avg_mQ += np.max(exp.a.q_val)
                     cur_step += 1
-                format.end()
+                epoch_steps += cur_step
             else:  # max_step >= 1
+                epoch_steps += max_step
                 for cur_step in range(max_step):
                     format.count(cur_step)
                     exp = self.get_exp(False, eps=1)
                     if exp == None:
                         break
-                    # LOG
-                    
+                    avg_rwd += exp.r
+            format.end()
+        avg_rwd /= epoch_steps
+        avg_mQ /= epoch_steps
+        print(f'avg rwd of valset is: {avg_rwd}')
+        print(f'avg mQ of valset is: {avg_mQ}')
+        self.val_epoch_rwds.append(avg_rwd)
+        self.val_epoch_mQs.append(avg_mQ)
         self.env.interval = interval
 
     def update(self, exps, log):
@@ -119,8 +131,12 @@ class DoubleDQNTrainer(Trainer):
         outputs = torch.cat(outputs, 0)  # torch.Size([batch])
         loss = self._cal_loss(outputs, targets.detach())  # torch.Size([batch])
         if log:
-            print(f'cur_avg_loss: {float(loss.mean())}')
-            print(f'cur_avg_mQ: {float(outputs.mean())}')
+            loss_log = float(loss.mean())
+            outputs_log = float(outputs.mean())
+            print(f'cur_avg_loss: {loss_log}')
+            print(f'cur_avg_mQ: {outputs_log}')
+            self.train_epoch_mean_loss += loss_log
+            self.train_epoch_mean_mQ += outputs_log
         self.agent.update(loss)
 
     def _cal_target(self, exps):
@@ -158,5 +174,6 @@ class DoubleDQNTrainer(Trainer):
         if nxt_stat == None:
             return None
         rwd = float(rwd.to('cpu'))
+        act.q_val = act.tensor.detach().cpu().numpy()
         act.tensor = None
         return Exprience(stat, rwd, act, nxt_stat)

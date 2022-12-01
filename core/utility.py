@@ -77,7 +77,7 @@ class ProgressFormat:
         need_do = "-" * (self.counts - cur)
         progress = (cur / self.counts) * 100
         dur = time.perf_counter() - self.start
-        print("\r{:^3.0f}%[{}->{}]{:.2f}s".format(progress, finsh, need_do, dur), end="")
+        print("{:^3.0f}%[{}->{}]{:.2f}s".format(progress, finsh, need_do, dur), end="")
 
     def end(self):
         print("\n")

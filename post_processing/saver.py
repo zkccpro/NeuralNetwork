@@ -1,7 +1,8 @@
 import torch
 from torchvision import transforms
 import csv
-import PIL 
+import PIL
+
 
 # 保存接口
 class SaverInterface:
@@ -25,11 +26,11 @@ class DataSaver(SaverInterface):
 
     def to_csv(self, arr, path, name):
         for i in range(len(arr)):
-            # 先把list中的每个tensor转成list
-            if arr[i].dim() > 0:  # 这里考虑了tensor维度大于1的情况，比如多损失模型
-                arr[i] = arr[i].tolist()
-            else:
-                arr[i] = [arr[i].tolist()]
+            if isinstance(arr[i], torch.Tensor):
+                if arr[i].dim() > 0:
+                    arr[i] = arr[i].tolist()
+                else:
+                    arr[i] = [arr[i].tolist()]
         with open(path + name + '.csv', 'w') as file:
             writer = csv.writer(file)
             writer.writerows(arr)

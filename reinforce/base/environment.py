@@ -1,5 +1,6 @@
 import numpy as np
 
+
 class Status:
     """
     NEED to be inherited
@@ -16,7 +17,7 @@ class Status:
         Returns: tensor (Tensor)
         """
         pass
-    
+
     def np_nml(self, data):
         """
         Args: data (np.array)
@@ -47,12 +48,11 @@ class Action:
     NEED to be inherited
     user action for detail tasks
     """
-
     def __init__(self):
         self.vals = dict()
         self.tensor = None
         self.dims = 1  # dim num of action space
-    
+
     def parse_from_tensor(self, tensor):
         """
         Need be overrided
@@ -61,7 +61,7 @@ class Action:
         Returns: self (Action)
         """
         self.tensor = tensor
-    
+
     def to_tensor(self):
         """
         Can be overrided
@@ -78,18 +78,17 @@ class Env:
     NEED to be inherited
     supply a base Env for users to design their environments
     """
-
     def __init__(self, stat, interval=1):
         self.stat = stat
         self.last_stat = stat
         self.interval = interval
-    
+
     def get_stat(self):
         return self.stat
-    
+
     def get_last_stat(self):
         return self.last_stat
-    
+
     def step(self, action, log):
         self._update_stat(action)
         if self.stat == None:
@@ -102,7 +101,7 @@ class Env:
         self.stat = stream.fst_frame()
         self.last_stat = self.stat
         return self.stat
-    
+
     def _cal_reward(self, log):
         """
         Need be overrided
@@ -111,7 +110,7 @@ class Env:
         Returns: reward (float)
         """
         pass
-    
+
     def _update_stat(self, action):
         self.last_stat = self.stat
         self.stat = self.stream.nxt_frame(action, self.interval)
