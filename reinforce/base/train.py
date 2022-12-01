@@ -2,6 +2,8 @@ from collections import deque
 import random
 import torch
 import numpy as np
+import time
+
 
 class Exprience:
     def __init__(self, stat, reward, action, nxt_stat):
@@ -51,46 +53,53 @@ class Trainer:
     NEED to be inherited
     train strategy of reinforcement learning
     """
-    def __init__(self, agent, env, streamset, loss_func):
+    def __init__(self, agent, env, trainset, valset, loss_func):
         self.agent = agent
         self.env = env
-        self.streamset = streamset
+        self.trainset = trainset
+        self.valset = valset
         self.loss_func = loss_func
-        
+
     def train(self, max_epoch=100, max_step=-1, backup_steps=100, log_steps=1000):
         log = False
         # epoches
         for cur_epoch in range(max_epoch):
             # episodes
-            for cur_episode, stream in enumerate(self.streamset):
+            for cur_episode, stream in enumerate(self.trainset):
                 self.env.reset(stream)
                 # iterations (steps)
                 if max_step < 1:
                     cur_step = 0
                     while(True):
+                        ts = time.strftime('%Y-%m-%d %H:%M:%S')
                         if cur_step % backup_steps == 0:
                             self.agent.backup()
                         if cur_step % log_steps == 0:
                             # LOG
-                            print(f'\nINFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
+                            print(f'\n{ts} - INFO - Epoch[{cur_epoch + 1}/{max_epoch}] Episode[{cur_episode + 1}/{len(self.trainset)}] Step[{cur_step + 1}/{len(stream)}]:')
                             log = True
                         else:
                             log = False
                         if not self.iter(log):
                             break
                         cur_step += self.env.interval
-                else:
+                else:  # max_step >= 1
                     for cur_step in range(max_step):
                         if cur_step % backup_steps == 0:
                             self.agent.backup()
                         if cur_step % log_steps == 0:
                             # LOG
-                            print(f'\nINFO: Epoch[{cur_epoch}/{max_epoch}] Episode[{cur_episode}/{len(self.streamset)}] Step[{cur_step}/{len(stream)}]:')
+                            print(f'\n{ts} - INFO - Epoch[{cur_epoch + 1}/{max_epoch}] Episode[{cur_episode + 1}/{len(self.trainset)}] Step[{cur_step + 1}/{len(stream)}]:')
                             log = True
                         else:
                             log = False
                         if not self.iter(log):
                             break
+            print(f'\n----------Start validating in epoch {cur_epoch + 1}---------')
+            self.validation(max_step)
+
+    def validation(self, max_step):
+        pass
 
     def iter(self, log):
         """
@@ -126,7 +135,6 @@ class Trainer:
         """
         pass
 
-    
     def _cal_loss(self, output, target):
         """
         Args: output(float), target(Action)
@@ -135,7 +143,7 @@ class Trainer:
         """
         return self.loss_func(output, target)
 
-    def get_exp(self, greedy_prob, log):
+    def get_exp(self):
         """
         Can be overrided
         Args: None

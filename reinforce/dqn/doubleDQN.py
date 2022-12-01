@@ -4,6 +4,7 @@ import torch
 from torch import Tensor
 from ..env import video
 from conf import globalParam
+from core import utility as util
 
 
 action_conf = dict(
@@ -41,14 +42,13 @@ class DoubleDQNAgent(Agent):
 
     def backup(self):
         self.obj_Q = self.est_Q
-        # print('INFO: backup estimate Qnet to object Qnet')
 
 
 class DoubleDQNTrainer(Trainer):
-    def __init__(self, agent, env, streamset, 
-                loss_func, batch_size, exp_pool_size, 
+    def __init__(self, agent, env, trainset, valset,
+                loss_func, batch_size, exp_pool_size,
                 gamma=0.9, eps=0.8, eps_scheduler=None):
-        super().__init__(agent, env, streamset, loss_func)
+        super().__init__(agent, env, trainset, valset, loss_func)
         self.batch_size = batch_size
         self.exprience_pool = Expriences(exp_pool_size)
         self.gamma = gamma
@@ -74,6 +74,35 @@ class DoubleDQNTrainer(Trainer):
         exps = self.exprience_pool.get_n_rand(self.batch_size)
         self.update(exps, log)
         return True
+
+    def validation(self, max_step):
+        interval = self.env.interval
+        self.env.interval = 1
+        for cur_episode, stream in enumerate(self.valset):
+            print(f'inferencing val stream [{cur_episode + 1}/{len(self.valset)}]: ')
+            self.env.reset(stream)
+            format = util.ProgressFormat(len(stream), interval=100)
+            format.start()
+            if max_step < 1:
+                cur_step = 0
+                while(True):
+                    format.count(cur_step)
+                    exp = self.get_exp(False, eps=1)
+                    if exp == None:
+                        break
+                    # LOG
+                    
+                    cur_step += 1
+                format.end()
+            else:  # max_step >= 1
+                for cur_step in range(max_step):
+                    format.count(cur_step)
+                    exp = self.get_exp(False, eps=1)
+                    if exp == None:
+                        break
+                    # LOG
+                    
+        self.env.interval = interval
 
     def update(self, exps, log):
         """

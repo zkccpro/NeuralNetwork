@@ -4,7 +4,9 @@ import reinforce.env as env
 import torch
 
 
-root_path = 'data/Rein/streamset/'
+data_root = 'data/Rein/'
+train_path = data_root + 'trainset/'
+val_path = data_root + 'valset/'
 
 status_conf = dict(
     ev = 0,
@@ -36,7 +38,8 @@ env_conf = dict(
 trainer_conf = dict(
     agent=dqn.DoubleDQNAgent(**agent_conf),
     env=env.SupervisedEnv(**env_conf),
-    streamset=env.Videoset(root_path),
+    trainset=env.Videoset(train_path),
+    valset=env.Videoset(val_path),
     loss_func=torch.nn.MSELoss(),
     batch_size=8,
     exp_pool_size=40,
@@ -48,6 +51,6 @@ trainer_conf = dict(
 train_param = dict(
     max_epoch=100,
     max_step=-1,
-    backup_steps=5,
+    backup_steps=env_conf['interval'] * 5,
     log_steps=env_conf['interval'] * 100
 )

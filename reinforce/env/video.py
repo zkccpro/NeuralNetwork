@@ -152,7 +152,6 @@ class SupervisedEnv(Env):
         # if log:
         #     print(f'env_output: {output}')
         # return output
-        
 
 
 class EV_VideoSpace(Stream):

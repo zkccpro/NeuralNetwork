@@ -1,6 +1,9 @@
 # 一些便于调用的计算函数
 import os
 import os.path as osp
+import sys
+import time
+
 
 # 用于求装有tensor的list的均值
 def mean(lst):
@@ -31,3 +34,50 @@ class Singleton(object):
             self._instance[self._cls] = self._cls()
         return self._instance[self._cls]
 
+
+class ProgressFormat:
+    """
+    封装一个带计时器的进度条输出format
+    Example:
+        max_iter = 1000
+        format = ProgressFormat(max_iter, interval=20)
+        format.start()
+        for i in range(max_iter):
+            format.count(i)
+            time.sleep(0.05)  # 这里模拟你的任务
+        format.end()
+    """
+    def __init__(self, counts, interval=1):
+        """
+        Args: 
+        counts, 你的任务总共有多少个迭代步
+        interval, 你希望间隔多少个迭代步刷新一次进度条
+        
+        Returns: None
+        """
+        self.counts = int(counts / interval)
+        self.interval = interval
+    
+    def start(self):
+        """
+        开始计时
+        """
+        self.start = time.perf_counter()
+
+    def count(self, cur):
+        """
+        Args: 
+        cur, 你的任务循环中的【当前】迭代步
+        Returns: None
+        """
+        if cur % self.interval != 0:
+            return
+        cur = int(cur / self.interval)
+        finsh = ">" * cur
+        need_do = "-" * (self.counts - cur)
+        progress = (cur / self.counts) * 100
+        dur = time.perf_counter() - self.start
+        print("\r{:^3.0f}%[{}->{}]{:.2f}s".format(progress, finsh, need_do, dur), end="")
+
+    def end(self):
+        print("\n")
