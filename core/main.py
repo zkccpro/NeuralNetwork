@@ -12,12 +12,11 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"  # 见https://blog.csdn.net/m0_50736
 
 if __name__ == '__main__':
     conf_parser = cp.ConfigParser()
-    conf_parser.parse()
-    # print(
-    #     'YOUR CONFIGS ARE:\n----------------------------------------------\n',
-    #     cp.ConfigParser().parse(),
-    #     '\n----------------------------------------------\n'
-    # )
+    print(
+        'YOUR CONFIGS ARE:\n----------------------------------------------\n',
+        cp.ConfigParser().parse(),
+        '\n----------------------------------------------\n'
+    )
     if not os.path.exists('output/'):
         os.mkdir('output/')
     if not os.path.exists(conf_parser.conf_dict['workdir']['work_dir']):

@@ -129,11 +129,11 @@ class Trainer:
             self.train_epoch_mean_mQ = 0
             self.train_epoch_mean_rwd = 0
 
-        print(self.train_epoch_losses)
-        print(self.train_epoch_mQs)
-        print(self.train_epoch_rwds)
-        print(self.val_epoch_mQs)
-        print(self.val_epoch_rwds)
+        print(f'train_epoch_losses: {self.train_epoch_losses}')
+        print(f'train_epoch_mQs: {self.train_epoch_mQs}')
+        print(f'train_epoch_rwds: {self.train_epoch_rwds}')
+        print(f'val_epoch_mQs: {self.val_epoch_mQs}')
+        print(f'val_epoch_rwds: {self.val_epoch_rwds}')
 
         csv_data = [
             ['train_epoch_losses', 'train_epoch_mQs', 'train_epoch_rwds', 'val_epoch_mQs', 'val_epoch_rwds'],
