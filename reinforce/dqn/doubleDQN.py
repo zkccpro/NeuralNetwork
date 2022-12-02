@@ -6,6 +6,8 @@ from ..env import video
 from conf import globalParam
 from core import utility as util
 import numpy as np
+from post_processing import draw
+from post_processing import saver
 
 
 action_conf = dict(
@@ -77,12 +79,14 @@ class DoubleDQNTrainer(Trainer):
         self.update(exps, log)
         return True
 
-    def validation(self, max_step):
+    def validation(self, cur_epoch, max_step):
         interval = self.env.interval
         self.env.interval = 1
         avg_rwd = 0
         avg_mQ = 0
+        valset_stats = []
         for cur_episode, stream in enumerate(self.valset):
+            stream_stats = []
             epoch_steps = 0
             print(f'inferencing val stream [{cur_episode + 1}/{len(self.valset)}]: ')
             self.env.reset(stream)
@@ -97,6 +101,7 @@ class DoubleDQNTrainer(Trainer):
                         break
                     avg_rwd += exp.r
                     avg_mQ += np.max(exp.a.q_val)
+                    stream_stats.append(exp.s.get_ev())
                     cur_step += 1
                 epoch_steps += cur_step
             else:  # max_step >= 1
@@ -108,12 +113,19 @@ class DoubleDQNTrainer(Trainer):
                         break
                     avg_rwd += exp.r
             format.end()
+            valset_stats.append(stream_stats)
         avg_rwd /= epoch_steps
         avg_mQ /= epoch_steps
+
         print(f'avg rwd of valset is: {avg_rwd}')
         print(f'avg mQ of valset is: {avg_mQ}')
         self.val_epoch_rwds.append(avg_rwd)
         self.val_epoch_mQs.append(avg_mQ)
+
+        saver.DataSaver().to_csv(valset_stats, self.conf_parser.conf_dict['workdir']['epoches_dir'], f'valset_stats_epoch{cur_epoch + 1}')
+        for i, stream_stats in enumerate(valset_stats):
+            draw.draw_1d(stream_stats, xlabel='frames', ylabel='status(EV)', name=f'stream_stats_epoch{cur_epoch + 1}_{i}', output_dir='epoches_dir')
+
         self.env.interval = interval
 
     def update(self, exps, log):

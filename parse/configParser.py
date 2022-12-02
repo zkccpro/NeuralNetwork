@@ -29,10 +29,10 @@ class ConfigParser(ParserInterface):
     def _parse_workdir(self):
         if wd.ts == '':
             wd.ts = wd.work_dir + time.strftime('%Y%m%d_%H%M/', time.localtime())
-        wd.checkpoint_dir = wd.ts + wd.checkpoint_dir
-        wd.log_dir = wd.ts + wd.log_dir
-        wd.result_dir = wd.ts + wd.result_dir
-        self._gen_dict_key('workdir', wd) 
+        for var in vars(wd):
+            if not var.startswith('__') and var != 'ts' and var != 'work_dir':
+                vars(wd)[var] = wd.ts + vars(wd)[var]
+        self._gen_dict_key('workdir', wd)
 
     def _parse_rf(self):
         self._gen_dict_key('reinforcement', rf)

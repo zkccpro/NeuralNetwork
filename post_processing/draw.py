@@ -8,7 +8,7 @@ import torch
 # 注意：tensor必须得是一维的，二维及以上的tensor plot处理不了！
 # 横轴根据输入arr的长度产生从零开始的序列
 # 如果loss暴nan，横坐标的数字会不是整数
-def draw_1d(arr, xlabel="x", ylabel="y", name="plt1"):
+def draw_1d(arr, xlabel="x", ylabel="y", name="plt1", output_dir='result_dir'):
     conf_parser = cp.ConfigParser()
     x = []
     for i in range(arr.__len__()):
@@ -16,7 +16,7 @@ def draw_1d(arr, xlabel="x", ylabel="y", name="plt1"):
     plt.plot(x, arr)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(conf_parser.conf_dict['workdir']['result_dir'] + name + ".jpg")
+    plt.savefig(conf_parser.conf_dict['workdir'][output_dir] + name + ".jpg")
     plt.delaxes()
     print('plots saved...')
 
@@ -34,7 +34,7 @@ def draw_2d(arr_x, arr_y):
 # arrs: 多个待绘制数据（1维tensor）的列表
 # label: arrs中每个数据（arr）对应的名称label（数量需与arrs中的arr数量保持一致）
 # todo: 这个函数会弹警告，以后需要处理一下
-def draw_2_data(arrs, label, xlabel="x", ylabel="y", name="plt2"):
+def draw_2_data(arrs, label, xlabel="x", ylabel="y", name="plt2", output_dir='result_dir'):
     conf_parser = cp.ConfigParser()
     x = []
     line_graph = []
@@ -47,7 +47,7 @@ def draw_2_data(arrs, label, xlabel="x", ylabel="y", name="plt2"):
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(handles=line_graph, labels=label)
-    plt.savefig(conf_parser.conf_dict['workdir']['result_dir'] + name + ".jpg")
+    plt.savefig(conf_parser.conf_dict['workdir'][output_dir] + name + ".jpg")
     plt.delaxes()
     print('plots saved...')
 

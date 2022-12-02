@@ -24,9 +24,9 @@ if __name__ == '__main__':
     if os.path.exists(conf_parser.conf_dict['workdir']['ts']):
         utility.rm_rf(conf_parser.conf_dict['workdir']['ts'])
     os.mkdir(conf_parser.conf_dict['workdir']['ts'])
-    os.mkdir(conf_parser.conf_dict['workdir']['checkpoint_dir'])
-    os.mkdir(conf_parser.conf_dict['workdir']['log_dir'])
-    os.mkdir(conf_parser.conf_dict['workdir']['result_dir'])
+    for key in conf_parser.conf_dict['workdir']:
+        if key != 'work_dir' and key != 'ts':
+            os.mkdir(conf_parser.conf_dict['workdir'][key])
 
     # TinyData_cnn.ut_TinyData_cnn()
     # TinyData_cnn_doubleinput.ut_TinyData_cnn_doubleinput()

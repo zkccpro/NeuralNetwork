@@ -10,6 +10,9 @@ ts = ''
 # 每代checkpoint文件存储路径
 checkpoint_dir = 'model/'
 
+# 每代的中间信息输出路径
+epoches_dir = 'epoches_info/'
+
 # 日志输出路径
 log_dir = 'log/'
 

@@ -115,7 +115,7 @@ class Trainer:
                         if not self.iter(log):
                             break
             print(f'\n----------Start validating in epoch {cur_epoch + 1}---------')
-            self.validation(max_step)
+            self.validation(cur_epoch, max_step)
             saver.ModelSaver().to_disk(self.agent.obj_Q, self.conf_parser.conf_dict['workdir']['checkpoint_dir'], 'epoch_' + str(cur_epoch + 1))
 
             print('total_frames =', epoch_steps)
@@ -153,7 +153,7 @@ class Trainer:
         draw.draw_1d(self.val_epoch_mQs, xlabel='epoch', ylabel='max Q', name="val_epoch_mQs")
         draw.draw_1d(self.val_epoch_rwds, xlabel='epoch', ylabel='reward', name="val_epoch_rwds")
 
-    def validation(self, max_step):
+    def validation(self, cur_epoch, max_step):
         pass
 
     def iter(self, log):
