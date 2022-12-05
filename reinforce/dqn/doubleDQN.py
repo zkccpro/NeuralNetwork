@@ -17,9 +17,13 @@ action_conf = dict(
 
 
 class DoubleDQNAgent(Agent):
-    def __init__(self, est_network, obj_network, optimizer):
+    def __init__(self, est_network, obj_network, optimizer, model_path=''):
         self.est_Q = est_network
         self.obj_Q = obj_network
+        if model_path != '':
+            pretrain_model = torch.load(model_path)
+            self.est_Q.load_state_dict(pretrain_model.state_dict())
+            self.obj_Q.load_state_dict(pretrain_model.state_dict())
         self.est_Q_optimizer = self.gen_optimizer(self.est_Q, optimizer)
 
     def obj_decision(self, stat):

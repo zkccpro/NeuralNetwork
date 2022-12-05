@@ -14,24 +14,25 @@ status_conf = dict(
 )
 
 eps_scheduler_conf = dict(
-    steps=1000,
+    steps=500,
     max_eps=0.95
 )
 
 optimizer_conf = dict(
     type = "Adam",
-    lr = 5e-4
+    lr = 1e-6
 )
 
 agent_conf = dict(
     est_network=globalParam.dqn_network_est,
     obj_network=globalParam.dqn_network_obj,
     optimizer=optimizer_conf,
+    model_path='data/Rein/pretrain/dqn_epoch_100_stage2.pth'
 )
 
 env_conf = dict(
     stat=env.EV_Status(**status_conf),
-    interval=10,
+    interval=1,
     network=globalParam.twostage_network,
     model_path='data/Rein/env_model/epoch_100.pth'
 )
@@ -45,7 +46,7 @@ trainer_conf = dict(
     batch_size=8,
     exp_pool_size=40,
     gamma=0.9,
-    eps=0.5,
+    eps=0.8,
     eps_scheduler=dqn.QuadricScheduler(**eps_scheduler_conf)
 )
 
