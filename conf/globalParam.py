@@ -2,7 +2,8 @@ from model.custom import resnet
 from model.custom import gennet
 from model.custom import senet
 from model.custom import twostage
-from model.custom import dueling_dqn
+from model.custom import qnet
+from model.custom import policynet as pnet
 import torch
 from torch.optim import lr_scheduler
 import PIL
@@ -23,8 +24,15 @@ secnn_doubleinput_network = senet.BigSECNNDoubleInput(BN=False, dropout=0).to(de
 unet_network = gennet.Unet(BN=False).to(device)
 cascade_unet_network = gennet.CascadeUnet(BN=False).to(device)
 twostage_network = twostage.TwostageNet(BN=False, dropout=0).to(device)
-dqn_network_est = dueling_dqn.DuelingDQN(dropout=0).to(device)
-dqn_network_obj = dueling_dqn.DuelingDQN(dropout=0).to(device)
+
+# rf-DQN
+dqn_network_est = qnet.DuelingDQN(7, dropout=0).to(device)
+dqn_network_obj = qnet.DuelingDQN(7, dropout=0).to(device)
+
+# rf-SAC
+critic_net = qnet.DoubleMinDQN(7, dropout=0).to(device)
+target_critic_net = qnet.DoubleMinDQN(7, dropout=0).to(device)
+actor_net = pnet.GaussianPolicy(7, action_space=None, dropout=0).to(device)
 
 # 优化器
 # lr:学习率，不宜过大, momentum:优化器冲量

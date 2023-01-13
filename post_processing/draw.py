@@ -16,7 +16,7 @@ def draw_1d(arr, xlabel="x", ylabel="y", name="plt1", output_dir='result_dir'):
     plt.plot(x, arr)
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
-    plt.savefig(conf_parser.conf_dict['workdir'][output_dir] + name + ".jpg")
+    plt.savefig(conf_parser.conf_dict['workdir'][output_dir] + name + ".jpg", dpi=1200)
     plt.delaxes()
     print('plots saved...')
 
@@ -47,7 +47,6 @@ def draw_2_data(arrs, label, xlabel="x", ylabel="y", name="plt2", output_dir='re
     plt.xlabel(xlabel)
     plt.ylabel(ylabel)
     plt.legend(handles=line_graph, labels=label)
-    plt.savefig(conf_parser.conf_dict['workdir'][output_dir] + name + ".jpg")
+    plt.savefig(conf_parser.conf_dict['workdir'][output_dir] + name + ".jpg", dpi=1200)
     plt.delaxes()
     print('plots saved...')
-

@@ -4,7 +4,6 @@ import torch
 from torch import Tensor
 from ..env import video
 from conf import globalParam
-from core import utility as util
 import numpy as np
 from post_processing import draw
 from post_processing import saver
@@ -17,11 +16,11 @@ action_conf = dict(
 
 
 class DoubleDQNAgent(Agent):
-    def __init__(self, est_network, obj_network, optimizer, model_path=''):
+    def __init__(self, est_network, obj_network, optimizer, pretrain_model_path=''):
         self.est_Q = est_network
         self.obj_Q = obj_network
-        if model_path != '':
-            pretrain_model = torch.load(model_path)
+        if pretrain_model_path != '':
+            pretrain_model = torch.load(pretrain_model_path)
             self.est_Q.load_state_dict(pretrain_model.state_dict())
             self.obj_Q.load_state_dict(pretrain_model.state_dict())
         self.est_Q_optimizer = self.gen_optimizer(self.est_Q, optimizer)
@@ -44,12 +43,14 @@ class DoubleDQNAgent(Agent):
         # backward
         self.est_Q.train()
         self.est_Q_optimizer.zero_grad()
-        loss.backward() # retain_graph=True
+        loss.backward()
         self.est_Q_optimizer.step()
 
     def backup(self):
         self.obj_Q.load_state_dict(self.est_Q.state_dict())
 
+    def save_to(self, path):
+        saver.ModelSaver().to_disk(self.obj_Q, path, '')
 
 class DoubleDQNTrainer(Trainer):
     def __init__(self, agent, env, trainset, valset,
@@ -61,6 +62,10 @@ class DoubleDQNTrainer(Trainer):
         self.gamma = gamma
         self.eps = eps
         self.eps_scheduler = eps_scheduler
+
+        # log init
+        self.train_epoch_mean_loss["train epoch loss"] = 0
+        self.train_epoch_losses["train epoch loss"] = []
 
     def iter(self, log):
         """
@@ -83,55 +88,6 @@ class DoubleDQNTrainer(Trainer):
         self.update(exps, log)
         return True
 
-    def validation(self, cur_epoch, max_step):
-        interval = self.env.interval
-        self.env.interval = 1
-        avg_rwd = 0
-        avg_mQ = 0
-        valset_stats = []
-        for cur_episode, stream in enumerate(self.valset):
-            stream_stats = []
-            epoch_steps = 0
-            print(f'inferencing val stream [{cur_episode + 1}/{len(self.valset)}]: ')
-            self.env.reset(stream)
-            format = util.ProgressFormat(len(stream), interval=100)
-            format.start()
-            if max_step < 1:
-                cur_step = 0
-                while(True):
-                    format.count(cur_step)
-                    exp = self.get_exp(False, eps=1)
-                    if exp == None:
-                        break
-                    avg_rwd += exp.r
-                    avg_mQ += np.max(exp.a.q_val)
-                    stream_stats.append(exp.s.get_ev())
-                    cur_step += 1
-                epoch_steps += cur_step
-            else:  # max_step >= 1
-                epoch_steps += max_step
-                for cur_step in range(max_step):
-                    format.count(cur_step)
-                    exp = self.get_exp(False, eps=1)
-                    if exp == None:
-                        break
-                    avg_rwd += exp.r
-            format.end()
-            valset_stats.append(stream_stats)
-        avg_rwd /= epoch_steps
-        avg_mQ /= epoch_steps
-
-        print(f'avg rwd of valset is: {avg_rwd}')
-        print(f'avg mQ of valset is: {avg_mQ}')
-        self.val_epoch_rwds.append(avg_rwd)
-        self.val_epoch_mQs.append(avg_mQ)
-
-        saver.DataSaver().to_csv(valset_stats, self.conf_parser.conf_dict['workdir']['epoches_dir'], f'valset_stats_epoch{cur_epoch + 1}')
-        for i, stream_stats in enumerate(valset_stats):
-            draw.draw_1d(stream_stats, xlabel='frames', ylabel='status(EV)', name=f'stream_stats_epoch{cur_epoch + 1}_{i}', output_dir='epoches_dir')
-
-        self.env.interval = interval
-
     def update(self, exps, log):
         """
         Args: list of <si, ri, ai, si+1> (list(Exprience))
@@ -151,7 +107,7 @@ class DoubleDQNTrainer(Trainer):
             outputs_log = float(outputs.mean())
             print(f'cur_avg_loss: {loss_log}')
             print(f'cur_avg_mQ: {outputs_log}')
-            self.train_epoch_mean_loss += loss_log
+            self.train_epoch_mean_loss["train epoch loss"] += loss_log
             self.train_epoch_mean_mQ += outputs_log
         self.agent.update(loss)
 

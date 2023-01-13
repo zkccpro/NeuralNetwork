@@ -58,6 +58,9 @@ class Agent:
         """
         pass
 
+    def save_to(self, path):
+        pass
+
     def gen_optimizer(self, network, optimizer):
         assert "type" in optimizer, "optimizer must have a type(SGD or Adam)"
         opt_type = optimizer.pop("type")

@@ -9,7 +9,7 @@ from parse import configParser as cp
 def ut_TinyData_twostage():
     # 1. load data and label
     # 2w张图片，训练时稳定占用25G内存
-    pic_list, test_list, label, test_label = dataReader.PredictDataReader([r"data/TinyData/"], None).read(50,42)
+    pic_list, test_list, label, test_label = dataReader.PredictDataReader([r"data/TinyData/"], None).read(default=True)
 
     # 2. prepare train data
     dataset = dataSet.CustomedDataSet(train_x=pic_list, train_y=label,
@@ -42,7 +42,7 @@ def ut_TinyData_twostage():
     action.train(cnn, dataloader, testloader,
                 globalParam.twostage_optimizer, reg_inferencer,
                 scheduler=globalParam.scheduler, warmup_scheduler=globalParam.warmup_scheduler,
-                iteration_show=100, max_epoch=2)
+                iteration_show=100, max_epoch=100)
 
     # test
     print('--------------------------------------------')
@@ -52,4 +52,4 @@ def ut_TinyData_twostage():
     # playback
     print('--------------------------------------------')
     print('playback model!')
-    action.model_playback(cnn, testloader, reg_inferencer, conf_parser.conf_dict['workdir']['checkpoint_dir'] + 'epoch_2.pth')
+    action.model_playback(cnn, testloader, reg_inferencer, conf_parser.conf_dict['workdir']['checkpoint_dir'] + 'epoch_100.pth')
