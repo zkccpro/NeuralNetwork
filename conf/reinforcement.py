@@ -110,6 +110,7 @@ trainer_conf = dict(
 
 train_param = dict(
     max_epoch=100,
+    checkpoint_epoch=20,
     max_step=-1,
     backup_steps=env_conf['interval'] * 5,
     log_steps=env_conf['interval'] * 100

@@ -77,7 +77,7 @@ class Trainer:
 
         self.conf_parser = cp.ConfigParser()
 
-    def train(self, max_epoch=100, max_step=-1, backup_steps=100, log_steps=1000):
+    def train(self, max_epoch=100, checkpoint_epoch=1, max_step=-1, backup_steps=100, log_steps=1000):
         log = False
         # epoches
         for cur_epoch in range(max_epoch):
@@ -117,8 +117,8 @@ class Trainer:
                             break
             print(f'\n----------Start validating in epoch {cur_epoch + 1}---------')
             self.validation(cur_epoch, max_step)
-            self.agent.save_to(self.conf_parser.conf_dict['workdir']['checkpoint_dir'] + 'epoch_' + str(cur_epoch + 1))
-            # saver.ModelSaver().to_disk(self.agent.obj_Q, self.conf_parser.conf_dict['workdir']['checkpoint_dir'], 'epoch_' + str(cur_epoch + 1))
+            if cur_epoch % checkpoint_epoch == 0:
+                self.agent.save_to(self.conf_parser.conf_dict['workdir']['checkpoint_dir'] + 'epoch_' + str(cur_epoch + 1))
 
             print('total_frames =', epoch_steps)
             for key in self.train_epoch_mean_loss:
